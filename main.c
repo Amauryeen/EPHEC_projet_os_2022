@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+#include <unistd.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 
 #include "lib/voitures.h"
 #include "lib/genererTemps.h"
@@ -33,4 +36,34 @@ int main() {
         printf("%d\t%.3f\t%.3f\t%.3f\t%.3f\n", v[k].id, v[k].s1, v[k].s2, v[k].s3, v[k].tt);
     }
     printf("=======================================\n");
+    
+    // mémoire partagée
+    int shmid = shmget(1000, 20 * sizeof(Voiture), 0666 | IPC_CREAT);
+    if (shmid == -1) {
+            printf("shmget() failed !");
+    }
+    
+    struct Voiture *circuit;
+    circuit = (void *) shmat(shmid,0,0);
+    //circuit = (struct voiture *) shmat(shmid,0,0);
+    if (circuit == -1) {
+            printf("shmat() failed !");
+    }
+    
+    int pid;
+    for (int i = 0; i < 20; i++){
+        pid = fork();
+
+        if (pid == -1){ // tester s'il y a une erreur dans le fork
+            printf("Error in fork()");
+        }
+        if (pid ==0){ // exécution du fils
+
+        }
+        if (pid > 0){ // exécution du père
+
+        }
+
+
+    }
 }
