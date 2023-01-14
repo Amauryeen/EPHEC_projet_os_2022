@@ -1,4 +1,3 @@
-
 #define TEMPS_P1 3600       //TEMPS POUR P1 (1H) 20tours
 #define TEMPS_P2 3600       //TEMPS POUR P2 (1H) 20
 #define TEMPS_P3 3600       //TEMPS POUR P3 (1H) 20 tours
@@ -15,20 +14,16 @@
 
 
 double generateTime(){
-    // Génère un temps aléatoire entre 'lower' et 'upper'
+    // Generate a random time between MAXTIMETURN and MINTIMETURN
 	int lower;
 	int upper;	
 	srand(clock());
-
-
 	upper= MAXTIMETURN;
-	
 	lower=MINTIMETURN;
-	
 	return (rand() % (upper - lower + 1)) + lower;
 }
 //int numberOfCarsOut(int min, int max){
-//	//Génère un temps aléatoire entre 'min' et 'max'
+	// Generate a random time between min and max
 //	srand(clock());
 //	return (rand() % (upper - lower + 1)) + lower;
 //}
@@ -42,5 +37,3 @@ double generateTime(){
 //    srand(clock());
 //    return (rand() % (upper - lower + 1)) + lower;
 //}
-
-
