@@ -5,53 +5,151 @@
 #include <unistd.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <unistd.h>
+#include <semaphore.h>
 
-#include "lib/voitures.h"
-#include "lib/genererTemps.h"
-#include "lib/tournerVoitures.h"
-#include "lib/trierResultats.h"
+#include "lib/generateTime.h"
+#include "lib/car.h"
+#include "lib/display.h"
 
-int main() {
-    for (int i = 0; i < 10; i++) { // Tours
-        turn();
-    }
-    
+int gettypeRace(char *argv[]);
 
-    printf("=======================================\nID\tS1\tS2\tS3\tTT\n\n");
-    for(int k = 0; k < 20; k++) {
-        printf("%d\t%.3f\t%.3f\t%.3f\t%.3f\n", voitures[k].id, voitures[k].s1, voitures[k].s2, voitures[k].s3, voitures[k].tt);
-    }
-    printf("=======================================\n");
-    
-    // mémoire partagée
-    int shmid = shmget(1000, 20 * sizeof(Voiture), 0666 | IPC_CREAT);
-    if (shmid == -1) {
-            printf("shmget() failed !");
-    }
-    
-    struct Voiture *circuit;
-    //circuit = (void *) shmat(shmid,0,0);
-    circuit = (struct Voiture *) shmat(shmid, 0, 0);
-    if (circuit == NULL) {
-            printf("shmat() failed !");
-    }
+sem_t *semaphore;
+int raceTime;
+Voiture *circuit;
+int nbToursAFaire;
 
 
 
+int main(int argc, char *argv[]){
+	////////semaphore
+	int shmid = shmget(IPC_PRIVATE, sizeof(sem_t), IPC_CREAT | 0666);
+	semaphore = shmat (shmid,0,0);
+	sem_init(semaphore,0,20);
+	if (argc != 2){
+        	printf("Veuillez passer 1 seul paramètre!\n");
+        	exit(EXIT_FAILURE);
+    	}
+	int raceId = gettypeRace(argv);
+	if (raceId == -1){
+        	printf("Erreur, parametre invalide (P1, P2, P3, Q1, Q2, Q3, F)\n");
+        	exit(EXIT_FAILURE);
+	}
 
+	else {
+		// mémoire partagée
+    		//int shmid = shmget(1000, 21 * sizeof(Voiture), 0666 | IPC_CREAT);
+		switch(raceId){
+			case 1 : case 2 : case 3 : nbToursAFaire=50;break;
+			case 4 : nbToursAFaire=20;break;
+			case 5 : nbToursAFaire=14;break;
+			case 6 : nbToursAFaire=10;break;
+			case 7 : nbToursAFaire=calculNbTours(4.675);
 
-    // 
-    
-    // int pid;
-    // for (int i = 0; i < 20; i++) {
+		}
+		int shmid = shmget(1000, (nbVoiture+1) * sizeof(Voiture), 0666 | IPC_CREAT);
+    		if (shmid == -1) {
+            		printf("shmget() failed !");
+    		}
 
-    //     // if(pid == -1) { // tester s'il y a une erreur dans le fork
-    //     //     printf("Error in fork()");
-    //     // }
+     		//Voiture *circuit;
+    		//circuit = (void *) shmat(shmid,0,0);
+    		circuit = ( Voiture *) shmat(shmid, 0, 0);
+    		init(circuit);
+    		if (circuit == NULL) {
+            		printf("shmat() failed !");
+            		exit(-2);
+    		}
+		display(circuit,semaphore);
+    		for (int i = 0; i < 20; i++) {
+                	int pid=fork();
 
-    //     if(fork() == 0) { // Fils
-    //         printf("Fils %d\n", i);
-    //         exit(0);
-    //     }
-    // }
+        		if(pid == -1) { // tester s'il y a une erreur dans le fork
+            			printf("Error in fork()");
+            			exit(-1);
+        		} else
+        		if(pid == 0) { // Fils
+            			//turnCar(circuit,raceId,semaphore);
+                    		for(int j=0;j<nbToursAFaire;j++){
+                        		sem_wait(semaphore);
+                        		turnCar(circuit,raceId,i);
+                        		sem_post(semaphore);
+                        		usleep(300000);
+                    		}
+
+                    		exit(0); // le fils arrête car il a fait tous ses tours
+        		}
+            	}
+	}
+	int i=0;
+	while(!seanceFinie(circuit,nbToursAFaire)){
+			i++;
+			printf("Affichage %d\n",i);
+			
+			//sem_wait(semaphore);
+			display(circuit,semaphore);
+			//sem_post(semaphore);
+			
+			usleep(1000000);
+
+	}
+	i++;
+	printf("Affichage %d\n",i);
+	
+	//sem_wait(semaphore);
+	display(circuit,semaphore);
+	//sem_post(semaphore);
+	
+	usleep(1000000);
+
+	sem_destroy(semaphore);
+	printf("La séance %s est finie\n",argv[1]);
+
+}
+
+int gettypeRace(char *argv[]){
+    	if(strcmp(argv[1], "P1" ) == 0){
+        	nbVoiture = 20;
+        	raceTime = TEMPS_P1;
+        	return 1;
+
+    	}
+    	else if(strcmp(argv[1], "P2") == 0) {
+        	nbVoiture = 20;
+        	raceTime = TEMPS_P2;
+        	return 2;
+
+    	}
+    	else if(strcmp(argv[1], "P3") == 0) {
+        	nbVoiture = 20;
+        	raceTime = TEMPS_P3;
+        	return 3;
+
+    	}
+    	else if(strcmp(argv[1], "Q1") == 0) {
+        	nbVoiture = 20;
+        	raceTime = TEMPS_Q1;
+        	return 4;
+
+    	}
+    	else if(strcmp(argv[1], "Q2") == 0) {
+        	nbVoiture = 15;
+        	raceTime = TEMPS_Q2;
+        	return 5;
+
+    	}
+    	else if(strcmp(argv[1], "Q3")  == 0) {
+        	nbVoiture = 10;
+        	raceTime = TEMPS_Q3;
+        	return 6;
+
+    	}
+    	else if(strcmp(argv[1], "F")  == 0) {
+        	nbVoiture = 20;
+        	return 7;
+
+    	}
+	else{
+    		return -1;
+	}
 }
