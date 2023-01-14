@@ -22,7 +22,7 @@ int nbToursAFaire;
 
 
 int main(int argc, char *argv[]){
-	////////semaphore
+	//semaphore
 	int shmid = shmget(IPC_PRIVATE, sizeof(sem_t), IPC_CREAT | 0666);
 	semaphore = shmat (shmid,0,0);
 	sem_init(semaphore,0,20);
@@ -37,12 +37,11 @@ int main(int argc, char *argv[]){
 	}
 
 	else {
-		// mémoire partagée
-    		//int shmid = shmget(1000, 21 * sizeof(Voiture), 0666 | IPC_CREAT);
+		
 		switch(raceId){
 			case 1 : case 2 : case 3 : nbToursAFaire=50;break;
 			case 4 : nbToursAFaire=20;break;
-			case 5 : nbToursAFaire=14;break;
+			case 5 : nbToursAFaire=15;break;
 			case 6 : nbToursAFaire=10;break;
 			case 7 : nbToursAFaire=calculNbTours(4.675);
 
@@ -52,8 +51,6 @@ int main(int argc, char *argv[]){
             		printf("shmget() failed !");
     		}
 
-     		//Voiture *circuit;
-    		//circuit = (void *) shmat(shmid,0,0);
     		circuit = ( Voiture *) shmat(shmid, 0, 0);
     		init(circuit);
     		if (circuit == NULL) {
@@ -69,7 +66,6 @@ int main(int argc, char *argv[]){
             			exit(-1);
         		} else
         		if(pid == 0) { // Fils
-            			//turnCar(circuit,raceId,semaphore);
                     		for(int j=0;j<nbToursAFaire;j++){
                         		sem_wait(semaphore);
                         		turnCar(circuit,raceId,i);
@@ -86,9 +82,7 @@ int main(int argc, char *argv[]){
 			i++;
 			printf("Affichage %d\n",i);
 			
-			//sem_wait(semaphore);
 			display(circuit,semaphore);
-			//sem_post(semaphore);
 			
 			usleep(1000000);
 
@@ -96,9 +90,7 @@ int main(int argc, char *argv[]){
 	i++;
 	printf("Affichage %d\n",i);
 	
-	//sem_wait(semaphore);
 	display(circuit,semaphore);
-	//sem_post(semaphore);
 	
 	usleep(1000000);
 
